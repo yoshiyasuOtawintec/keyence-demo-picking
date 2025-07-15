@@ -19,4 +19,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // --- ここから追加 ---
+  base: '/KEYENCE_PICKUP_DEMO/', // あなたのIISのサブディレクトリ名に合わせてください
+  // --- ここまで ---
 }));
