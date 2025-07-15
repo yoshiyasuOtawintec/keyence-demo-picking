@@ -274,12 +274,12 @@ const PickingPage: React.FC = () => { // コンポーネント名をPickingPage�
       {/* <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
           <img
-            src="/NAKAYAMA_LOGO.png" // publicディレクトリからの相対パス
+            src="/LOGO.png" // publicディレクトリからの相対パス
             alt="NAKAYAMA LOGO"
             className="h-8 mr-3" // ロゴの高さとマージンを調整
           />
           <div>
-            <h1 className="text-xl font-bold">ナカヤマ工業</h1>
+            <h1 className="text-xl font-bold"></h1>
             <p className="text-sm opacity-90">ピッキングシステム</p>
           </div>
         </div>
