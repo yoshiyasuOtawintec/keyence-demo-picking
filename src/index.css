@@ -1,0 +1,136 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ハンディターミナル (480×800) 向けカスタムデザインシステム */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 214 100% 45%; /* 青を基調 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 214 20% 95%;
+    --secondary-foreground: 214 100% 25%;
+
+    --muted: 214 15% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 214 100% 50%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 214 100% 45%;
+
+    --radius: 0.5rem;
+
+    /* ハンディターミナル専用カラー */
+    --handy-blue: 214 100% 45%;
+    --handy-blue-light: 214 100% 85%;
+    --handy-blue-dark: 214 100% 35%;
+    --handy-success: 142 76% 36%;
+    --handy-warning: 45 93% 47%;
+    --handy-danger: 0 84% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* ソフトウェアキーボードを非表示 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* ハンディターミナル向け基本スタイル */
+  .handy-container {
+    @apply w-full max-w-[480px] mx-auto min-h-screen bg-background;
+  }
+
+  .handy-button {
+    @apply bg-primary text-primary-foreground px-6 py-4 rounded-lg font-semibold text-lg min-h-[60px] w-full;
+    @apply hover:bg-primary/90 active:bg-primary/80 transition-colors;
+    @apply flex items-center justify-center gap-2;
+  }
+
+  .handy-input {
+    @apply bg-background border-2 border-primary rounded-lg px-4 py-3 text-lg min-h-[60px];
+    @apply focus:ring-2 focus:ring-primary focus:border-primary;
+  }
+
+  .handy-card {
+    @apply bg-card rounded-lg border-2 border-muted p-4 shadow-sm;
+  }
+
+  .handy-text-large {
+    @apply text-xl font-semibold;
+  }
+
+  .handy-text-medium {
+    @apply text-lg font-medium;
+  }
+
+  .handy-text-small {
+    @apply text-base;
+  }
+
+  /* スキャン関連スタイル */
+  .scan-indicator {
+    @apply bg-handy-blue-light border-2 border-handy-blue text-handy-blue-dark;
+    @apply px-4 py-2 rounded-lg font-mono text-lg text-center;
+  }
+
+  /* ステータス表示スタイル */
+  .status-waiting {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  .status-working {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .status-completed {
+    @apply bg-green-100 text-green-800;
+  }
+
+  /* 進捗表示 */
+  .progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-3;
+  }
+
+  .progress-fill {
+    @apply bg-primary h-3 rounded-full transition-all duration-300;
+  }
+}
+
+/* 特定の要素でソフトウェアキーボードを無効化 */
+input[readonly], select, button {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* タップハイライトを無効化 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

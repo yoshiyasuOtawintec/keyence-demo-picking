@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2018", // 出力されるJavaScriptのバージョン (Node.jsのバージョンに合わせて調整可能)
+    "module": "commonjs", // モジュールシステム (Node.jsのCommonJS形式)
+    "lib": ["es2018", "dom"], // 使用するライブラリ定義 (domはブラウザAPIを含みますが、ここではTypeScriptの型チェックのため便宜上含んでいます。サーバーサイドのみなら外してもOK)
+    "outDir": "./dist", // コンパイルされたJavaScriptファイルの出力先ディレクトリ
+    "rootDir": "./src", // ソースコードのルートディレクトリ
+    "esModuleInterop": true, // CommonJSモジュールとESモジュール間の互換性を向上させる
+    "strict": true, // 厳格な型チェックを有効にする (推奨)
+    "skipLibCheck": true, // 宣言ファイルの型チェックをスキップする (ビルド時間を短縮)
+    "forceConsistentCasingInFileNames": true // ファイル名の大文字・小文字の統一を強制
+  },
+  "include": ["src/**/*.ts"], // コンパイル対象のファイル
+  "exclude": ["node_modules"] // コンパイル対象から除外するファイル
+}
