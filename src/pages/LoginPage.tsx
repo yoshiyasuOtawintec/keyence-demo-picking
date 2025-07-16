@@ -176,12 +176,12 @@ const LoginPage: React.FC = () => { // コンポーネント名をLoginPageに�
         <div className="flex items-center">
           {/* ロゴの表示 */}
           <img
-            src="/LOGO.png" // publicディレクトリからの相対パス
+            src="/KEYENCE_PICKUP_DEMO/LOGO.png" // publicディレクトリからの相対パス
             alt="KEYENCE LOGO"
             className="h-8 mr-3" // ロゴの高さとマージンを調整
           />
           <div>
-            <h1 className="text-xl font-bold">Keyenceハンディパッケージ</h1>
+            <h1 className="text-xl font-bold">Keyenceシステム</h1>
             <p className="text-sm opacity-90">ピッキングシステム</p>
           </div>
         </div>
