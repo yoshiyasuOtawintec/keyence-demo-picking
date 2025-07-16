@@ -1,11 +1,59 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // useCallback を削除
 import { ChevronDown, ChevronUp, LogOut, Search, Calendar, RefreshCcw, XCircle } from 'lucide-react';
 import HandyContainer from '../components/HandyContainer'; // components ディレクトリからインポート
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // useNavigate をインポート
-import { useAppState, Staff, PlanData } from '../hooks/useAppState'; // useAppState と型をインポート
+import { useAppState, Staff } from '../hooks/useAppState'; // useAppState と型をインポート
+// PlanData の型定義が useAppState からインポートされていることを前提としますが、
+// ここに直接記述されていないため、もし必要であれば追加してください。
+// 例: export type PlanData = {...};
 
-const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSelectionPageに、プロップスを削除
+// 型定義（元のコードにPLAN_MSGがないため追加します）
+export type Staff = {
+  TANTO_CODE: string;
+  TANTO_NAME: string;
+};
+
+export type PlanDetail = {
+  ID: number;
+  ROW_NO: number;
+  HINSYU?: string;
+  ITEM_TITLE?: string;
+  ITEM_NAME: string;
+  TANA_NO?: string;
+  READ_DATA?: string;
+  QTY_TYPE?: number;
+  DETAIL_QTY: number;
+  READ_QTY: number;
+  isCompleted?: boolean;
+  COMMENT?: string;
+  ALERT_MSG?: string;
+  REMARK?: string;
+};
+
+export type PlanData = {
+  ID: number;
+  NOHIN_DATE: string;
+  HINBAN: string;
+  QTY: number;
+  PLAN_STATUS: 0 | 1 | 2;
+  START_DTM: string | null;
+  END_DTM: string | null;
+  CSV_FILE: string | null;
+  CREATE_DTM: string;
+  CREATE_TANTO_CODE: string;
+  CREATE_TANTO_NAME: string;
+  UPDATE_DTM: string;
+  UPDATE_TANTO_CODE: string;
+  UPDATE_TANTO_NAME: string;
+  START_TANTO_CODE: string | null;
+  START_TANTO_NAME: string | null;
+  PLAN_MSG: string | null; // ★追加：PLAN_MSG
+  details: PlanDetail[];
+};
+
+
+const PlanSelectionPage: React.FC = () => {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,15 +63,13 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
   };
   const [dateFilter, setDateFilter] = useState(getTodayDate());
   const [itemCodeFilter, setItemCodeFilter] = useState('');
-  // 修正点: hasSearched の初期値を true に変更
-  const [hasSearched, setHasSearched] = useState(true); // 初期状態で検索済みとみなす
+  // 修正: hasSearched ステートを削除
+  // const [hasSearched, setHasSearched] = useState(true); 
   const [expandedPlanId, setExpandedPlanId] = useState<number | null>(null);
 
-  const navigate = useNavigate(); // useNavigateフックを使用
-  const { currentUser, setSelectedPlan, clearAppState } = useAppState(); // useAppStateから必要な状態とアクションを取得
+  const navigate = useNavigate();
+  const { currentUser, setSelectedPlan, clearAppState } = useAppState();
 
-  // currentUserがnullの場合はログイン画面へリダイレクト
-  // App.tsxのルーティングで処理されるが、コンポーネント内でも念のためガード
   useEffect(() => {
     if (!currentUser) {
       console.warn("PlanSelectionPage: currentUser is missing. Redirecting to login.");
@@ -33,8 +79,8 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // 計画データを取得する関数
-  const fetchPlans = useCallback(async () => {
+  // 計画データを取得する関数 (useCallback を削除し、通常の関数として定義)
+  const fetchPlans = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -46,6 +92,7 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
       }
 
       const queryParams = new URLSearchParams();
+      // 関数内で直接最新のステート値を使用
       if (dateFilter) {
         queryParams.append('deliveryDate', dateFilter);
       }
@@ -55,7 +102,6 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
 
       const response = await axios.get<PlanData[]>(`${API_BASE_URL}/api/plans?${queryParams.toString()}`);
       
-      // ★修正: フロントエンドでのソート処理を削除。バックエンドのソート順をそのまま使用します。
       setPlans(response.data); 
       setError(null);
     } catch (err) {
@@ -64,26 +110,19 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, dateFilter, itemCodeFilter]); // 検索条件が変更されたら関数を再生成
+  };
 
-  // 検索トリガー用のuseEffect: hasSearchedがtrueの場合のみデータをフェッチ
+  // 初期ロード時に一度だけデータをフェッチする useEffect
+  // 依存配列を空にすることで、コンポーネントのマウント時に一度だけ実行される
   useEffect(() => {
-    // 修正点: hasSearched が true の場合は常に fetchPlans を呼び出す
-    // 初期ロード時に hasSearched が true なので、ここでデータがフェッチされます
-    if (hasSearched) {
-      fetchPlans();
-    } else {
-      // hasSearched が false になった場合（クリアボタン押下時など）
-      setLoading(false);
-      setPlans([]);
-    }
-  }, [hasSearched, fetchPlans]); // hasSearched または fetchPlans が変更されたら実行
+    fetchPlans();
+  }, []); // 空の依存配列
 
   // フィルタリング処理をuseMemoでメモ化
   const filteredPlans = useMemo(() => {
     // PLAN_STATUSが2（作業完了）の計画は表示しない
     return plans.filter(plan => plan.PLAN_STATUS === 0 || plan.PLAN_STATUS === 1);
-  }, [plans]); // plansが変更された時のみ再計算
+  }, [plans]);
 
   // 計画行の展開/折りたたみハンドラ (今回は使用しないが、コードは残す)
   const togglePlanDetails = (planId: number) => {
@@ -92,8 +131,8 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
 
   // 検索ボタンクリックハンドラ
   const handleSearch = () => {
-    setHasSearched(true); // 検索が実行されたことをマーク
-    // fetchPlans は useEffect によって呼び出される
+    // 検索ボタンが押されたときにのみ fetchPlans を呼び出す
+    fetchPlans();
   };
 
   // クリアボタンクリックハンドラ
@@ -101,8 +140,11 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
     setDateFilter(getTodayDate()); // 日付を今日の日付に戻す
     setItemCodeFilter('');
     setPlans([]); // データをクリア
-    setHasSearched(false); // 検索状態をリセットし、初期メッセージを表示
+    // 修正: hasSearched は削除
+    // setHasSearched(false); 
     setExpandedPlanId(null); // 展開状態もリセット
+    // クリアボタン押下後、再度今日のデータを表示したい場合は、ここで fetchPlans() を呼び出してください。
+    // 例: fetchPlans();
   };
 
   // 計画選択時のハンドラ
@@ -126,6 +168,23 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
     }
   };
 
+  // ★追加：PLAN_MSG の内容に応じてスタイルを返す関数
+  const getPlanMessageStyle = (message: string | null | undefined) => {
+    if (!message) {
+      return ''; // メッセージがない場合はスタイルなし
+    }
+    const lowerCaseMessage = message.toLowerCase();
+    if (lowerCaseMessage.includes('急ぎ') || lowerCaseMessage.includes('urgent')) {
+      return 'bg-red-100 text-red-800 border border-red-300 rounded-md px-1 py-0.5'; // 赤系の背景
+    }
+    if (lowerCaseMessage.includes('注意喚起') || lowerCaseMessage.includes('alert') || lowerCaseMessage.includes('warning')) {
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-md px-1 py-0.5'; // 黄系の背景
+    }
+    // その他のメッセージ
+    return 'bg-gray-100 text-gray-700 border border-gray-200 rounded-md px-1 py-0.5'; // デフォルトの背景
+  };
+
+
   // ローディング中の表示
   if (loading) {
     return (
@@ -144,7 +203,7 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
         <div className="p-2 text-center text-red-500">
           エラー: {error}
           <button
-            onClick={fetchPlans}
+            onClick={handleSearch} // エラー時に再試行ボタンで検索を実行
             className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg font-medium text-sm flex items-center justify-center"
           >
             <RefreshCcw className="mr-2" size={16} /> 再試行
@@ -225,7 +284,6 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
             計画データ一覧 ({filteredPlans.length}件)
           </h2>
           
-          {/* 修正点: hasSearched の条件を削除し、常に filteredPlans の内容に基づいて表示を決定 */}
           {filteredPlans.length === 0 ? (
             <div className="handy-card text-center text-muted-foreground py-2 text-sm">
               該当する計画データがありません
@@ -250,8 +308,14 @@ const PlanSelectionPage: React.FC = () => { // コンポーネント名をPlanSe
                         {plan.HINBAN}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {plan.NOHIN_DATE} | {plan.START_TANTO_NAME || '担当者不明'} {/* ★修正点: UPDATE_TANTO_NAME を START_TANTO_NAME に変更 */}
+                        {plan.NOHIN_DATE} | {plan.START_TANTO_NAME || '担当者不明'}
                       </div>
+                      {/* ★追加：PLAN_MSG の表示とスタイル適用 */}
+                      {plan.PLAN_MSG && (
+                        <div className={`text-xs mt-0.5 p-0.5 ${getPlanMessageStyle(plan.PLAN_MSG)}`}>
+                          メッセージ: {plan.PLAN_MSG}
+                        </div>
+                      )}
                     </div>
                     <span className={`px-1 py-0.5 rounded text-xs font-medium ${statusInfo.className}`}>
                       {statusInfo.text}
