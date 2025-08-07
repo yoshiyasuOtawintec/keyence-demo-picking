@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS1-128 バーコードリーダー</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        #barcodeInput {
+            width: 90%;
+            padding: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #resultContainer, #rawContainer {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+            min-height: 50px;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>GS1-128 バーコードリーダー</h1>
+    <p>以下の入力欄にカーソルを合わせ、バーコードを読み取ってください。</p>
+
+    <input type="text" id="barcodeInput" placeholder="バーコードを読み取ってください" autofocus>
+
+    ---
+
+    <h2>読み取り生データ</h2>
+    <div id="rawContainer">
+        ここに読み取り値がそのまま表示されます。
+    </div>
+
+    ---
+
+    <h2>解析結果</h2>
+    <div id="resultContainer">
+        ここに解析結果が表示されます。
+    </div>
+
+    <script>
+        function parseGs1Code(gs1Code) {
+            const aiDefinitions = {
+                "01": 14,
+                "10": 0,
+                "21": 0,
+                "17": 6,
+                "30": 0
+            };
+
+            const parsedData = {};
+            let currentIndex = 0;
+            // FNC1の候補を定義
+            const FNC1 = String.fromCharCode(29);
+            const FNC1_CANDIDATES = [FNC1, '%', '>'];
+            let detectedFNC1 = null;
+
+            // 最初にFNC1文字を特定する
+            for(const candidate of FNC1_CANDIDATES) {
+                if(gs1Code.includes(candidate)) {
+                    detectedFNC1 = candidate;
+                    break;
+                }
+            }
+            const fnc1ToUse = detectedFNC1 || FNC1; // 見つからなければ、デフォルトのFNC1を使用
+
+            while (currentIndex < gs1Code.length) {
+                const ai = gs1Code.substring(currentIndex, currentIndex + 2);
+                
+                if (!aiDefinitions.hasOwnProperty(ai)) {
+                    break;
+                }
+
+                currentIndex += 2;
+                let dataLength;
+                let dataValue;
+
+                if (aiDefinitions[ai] > 0) {
+                    dataLength = aiDefinitions[ai];
+                    dataValue = gs1Code.substring(currentIndex, currentIndex + dataLength);
+                    currentIndex += dataLength;
+                } else {
+                    let nextIndex = gs1Code.indexOf(fnc1ToUse, currentIndex);
+                    
+                    if (nextIndex === -1) {
+                        const aiKeys = Object.keys(aiDefinitions);
+                        let nextAiIndex = gs1Code.length;
+                        for (const key of aiKeys) {
+                            const tempIndex = gs1Code.indexOf(key, currentIndex);
+                            if (tempIndex !== -1 && tempIndex < nextAiIndex) {
+                                nextAiIndex = tempIndex;
+                            }
+                        }
+                        nextIndex = nextAiIndex;
+                    }
+
+                    dataLength = nextIndex - currentIndex;
+                    dataValue = gs1Code.substring(currentIndex, currentIndex + dataLength);
+                    currentIndex += dataLength;
+                    
+                    if (gs1Code[currentIndex] === fnc1ToUse) {
+                        currentIndex++;
+                    }
+                }
+                
+                parsedData[ai] = dataValue;
+            }
+
+            // どのFNC1が検出されたかを返す
+            return {
+                data: parsedData,
+                fnc1Char: detectedFNC1
+            };
+        }
+
+        const barcodeInput = document.getElementById('barcodeInput');
+        const rawContainer = document.getElementById('rawContainer');
+        const resultContainer = document.getElementById('resultContainer');
+
+        barcodeInput.addEventListener('change', (event) => {
+            const scannedCode = event.target.value;
+            
+            if (scannedCode) {
+                // FNC1の検出処理とパース処理を統合
+                const parseResult = parseGs1Code(scannedCode);
+                const parsedData = parseResult.data;
+                const detectedFNC1 = parseResult.fnc1Char;
+
+                // 読み取り生データにFNC1の情報を追記
+                let rawText = `読み取り値: ${scannedCode}\n`;
+                if (detectedFNC1) {
+                    const fnc1Display = detectedFNC1 === String.fromCharCode(29) ? 'ASCIIコード29番 (不可視)' : `文字「${detectedFNC1}」`;
+                    rawText += `検出されたFNC1文字: ${fnc1Display}\n`;
+                } else {
+                    rawText += `FNC1は検出されませんでした。\n`;
+                }
+                rawContainer.textContent = rawText;
+
+                // 解析結果を整形して表示
+                let resultText = '';
+                for (const ai in parsedData) {
+                    const data = parsedData[ai];
+                    resultText += `AI (${ai}): ${data}\n`;
+                    if (ai === "01") {
+                        if (data.length === 14) {
+                            const firstDigit = data.substring(0, 1);
+                            const janCodePart = data.substring(1);
+                            resultText += `  -> 先頭1桁 (2): ${firstDigit}\n`;
+                            resultText += `  -> JANコード相当 (0884521047269): ${janCodePart}\n`;
+                        }
+                    }
+                }
+                resultContainer.textContent = resultText || '解析できませんでした。';
+                
+                event.target.value = '';
+            }
+        });
+
+        window.addEventListener('load', () => {
+            barcodeInput.focus();
+        });
+    </script>
+
+</body>
+</html>

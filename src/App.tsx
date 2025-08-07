@@ -10,10 +10,11 @@ import LoginPage from "./pages/LoginPage";
 import PlanSelectionPage from "./pages/PlanSelectionPage";
 import PickingPage from "./pages/PickingPage";
 import NotFound from "./pages/NotFound";
+import ScanTestPage from "./pages/ScanTestPage"; // ★追加: ScanTestPageをインポート
 
-// ★修正: AppStateProvider は contextフォルダから、useAppState は hooksフォルダからインポート
+// AppStateProvider は contextフォルダから、useAppState は hooksフォルダからインポート
 import { AppStateProvider } from './context/AppStateContext';
-import { useAppState } from './hooks/useAppState'; // ★修正: useAppStateのインポート元を修正
+import { useAppState } from './hooks/useAppState';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,9 @@ const App = () => {
 
               {/* ピッキング画面 - 計画が選択済みの場合のみアクセス可能 */}
               <Route path="/picking" element={<PickingRoute />} />
+
+              {/* 読み取りテスト画面 - ログイン状態に関わらずアクセス可能とする */}
+              <Route path="/scan-test" element={<ScanTestPage />} /> {/* ★追加: 読み取りテスト画面のルート */}
 
               {/* 上記のどのルートにもマッチしない場合、NotFoundコンポーネントが表示される */}
               <Route path="*" element={<NotFound />} />

@@ -169,6 +169,12 @@ const LoginPage: React.FC = () => { // コンポーネント名をLoginPageに�
     }
   };
 
+  // 読み取りテストボタン押下時の処理
+  const handleScanTest = () => {
+    // 読み取りテスト画面への遷移
+    navigate('/scan-test'); // 仮のルート名、必要に応じて変更してください
+  };
+
   return (
     <HandyContainer>
       {/* カスタムヘッダー */}
@@ -259,9 +265,17 @@ const LoginPage: React.FC = () => { // コンポーネント名をLoginPageに�
             !selectedStaff || availableStaff.length === 0
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : ''
-          }`}
+          } mb-4`}
         >
           ログイン
+        </button>
+
+        {/* 読み取りテストボタンを追加 */}
+        <button
+          onClick={handleScanTest}
+          className="handy-button bg-blue-500 hover:bg-blue-600 text-white"
+        >
+          読み取りテスト
         </button>
       </div>
     </HandyContainer>
