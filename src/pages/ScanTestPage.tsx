@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import HandyContainer from '../components/HandyContainer';
 
 // KJSライブラリの型定義をグローバルスコープに宣言
@@ -20,60 +21,65 @@ declare global {
 // GS1-128パース関数をコンポーネント外部に定義
 // -----------------------------------------------------------
 function parseGs1Code(gs1Code: string) {
-  const aiDefinitions = {
-    "01": 14, // GTIN (固定長)
-    "17": 6,  // 賞味期限 (固定長)
-    "10": 0,  // ロット番号 (可変長)
-    "21": 0,  // シリアル番号 (可変長)
-    "30": 0   // 数量 (可変長)
-  };
+    const aiDefinitions: { [key: string]: number } = {
+        "01": 14, // GTIN (固定長)
+        "17": 6,  // 賞味期限 (固定長)
+        "10": 0,  // ロット番号 (可変長)
+        "21": 0,  // シリアル番号 (可変長)
+        "30": 0   // 数量 (可変長)
+    };
 
-  const parsedData: { [key: string]: string } = {};
-  let currentIndex = 0;
-  
-  let availableAiKeys = Object.keys(aiDefinitions);
-  const FNC1 = String.fromCharCode(29); 
+    const parsedData: { [key: string]: string } = {};
+    let currentIndex = 0;
+    
+    // FNC1文字（ASCIIコード29番）を定義
+    const FNC1 = String.fromCharCode(29); 
 
-  while (currentIndex < gs1Code.length) {
-      let currentAi = null;
-      for (const key of availableAiKeys) {
-          if (gs1Code.substring(currentIndex, currentIndex + key.length) === key) {
-              currentAi = key;
-              break;
-          }
-      }
-      if (!currentAi) {
-          break;
-      }
-      availableAiKeys = availableAiKeys.filter(key => key !== currentAi);
-      currentIndex += currentAi.length;
-      let dataValue;
-      const dataLength = aiDefinitions[currentAi];
-      
-      if (dataLength > 0) {
-          dataValue = gs1Code.substring(currentIndex, currentIndex + dataLength);
-          currentIndex += dataLength;
-      } else {
-          let nextIndex = gs1Code.length;
-          const fnc1Index = gs1Code.indexOf(FNC1, currentIndex);
-          if (fnc1Index !== -1 && fnc1Index < nextIndex) {
-              nextIndex = fnc1Index;
-          }
-          for (const key of availableAiKeys) {
-              const tempIndex = gs1Code.indexOf(key, currentIndex);
-              if (tempIndex !== -1 && tempIndex < nextIndex) {
-                  nextIndex = tempIndex;
-              }
-          }
-          dataValue = gs1Code.substring(currentIndex, nextIndex);
-          currentIndex = nextIndex;
-          if (gs1Code[currentIndex] === FNC1) {
-              currentIndex++;
-          }
-      }
-      parsedData[currentAi] = dataValue;
-  }
-  return parsedData;
+    while (currentIndex < gs1Code.length) {
+        let currentAi = null;
+        
+        // 現在の位置から、利用可能なAIを探す
+        for (const key in aiDefinitions) {
+            if (gs1Code.substring(currentIndex, currentIndex + key.length) === key) {
+                currentAi = key;
+                break;
+            }
+        }
+        
+        if (!currentAi) {
+            break; // 一致するAIがなければ終了
+        }
+        
+        currentIndex += currentAi.length;
+        let dataValue;
+        
+        const dataLength = aiDefinitions[currentAi];
+        
+        if (dataLength > 0) {
+            // 固定長の場合
+            dataValue = gs1Code.substring(currentIndex, currentIndex + dataLength);
+            currentIndex += dataLength;
+        } else {
+            // 可変長の場合、FNC1または次に利用可能なAIを探す
+            let nextIndex = gs1Code.length;
+            
+            // FNC1の位置を探す
+            const fnc1Index = gs1Code.indexOf(FNC1, currentIndex);
+
+            if (fnc1Index !== -1) {
+                // FNC1が見つかった場合
+                dataValue = gs1Code.substring(currentIndex, fnc1Index);
+                currentIndex = fnc1Index + 1; // FNC1をスキップ
+            } else {
+                // FNC1が見つからない場合、文字列の最後までをデータとする
+                dataValue = gs1Code.substring(currentIndex);
+                currentIndex = gs1Code.length; // 処理終了
+            }
+        }
+
+        parsedData[currentAi] = dataValue;
+    }
+    return parsedData;
 }
 // -----------------------------------------------------------
 
@@ -166,8 +172,9 @@ const ScanTestPage: React.FC = () => {
     }
   }, [handleScanResult]);
 
+  // 戻るボタンの代わりに、ヘッダーに配置するナビゲーション関数
   const handleBack = () => {
-    navigate('/');
+    navigate('/menu');
   };
 
   const handleClear = () => {
@@ -188,6 +195,13 @@ const ScanTestPage: React.FC = () => {
     <HandyContainer>
       <div className="bg-primary text-primary-foreground p-3 flex items-center justify-between shadow-md">
         <div className="flex items-center">
+          {/* 追加: 戻るボタンのコンポーネント */}
+          <button
+            onClick={handleBack}
+            className="flex items-center text-sm mr-2 hover:opacity-80 transition-opacity"
+          >
+            <ChevronLeft size={20} />
+          </button>
           <img
             src="/KEYENCE_PICKUP_DEMO/LOGO.png"
             alt="KEYENCE LOGO"
@@ -247,15 +261,10 @@ const ScanTestPage: React.FC = () => {
         {/* ----------------------------------------------------------- */}
 
         <div className="flex justify-around space-x-4 mt-6">
-          <button
-            onClick={handleBack}
-            className="handy-button bg-gray-500 hover:bg-gray-600 text-white w-1/2"
-          >
-          戻る
-          </button>
+          {/* 「戻る」ボタンを削除 */}
           <button
             onClick={handleClear}
-            className="handy-button bg-red-500 hover:bg-red-600 text-white w-1/2"
+            className="handy-button bg-red-500 hover:bg-red-600 text-white w-full"
           >
             クリア
           </button>

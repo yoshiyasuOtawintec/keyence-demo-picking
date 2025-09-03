@@ -10,7 +10,9 @@ import LoginPage from "./pages/LoginPage";
 import PlanSelectionPage from "./pages/PlanSelectionPage";
 import PickingPage from "./pages/PickingPage";
 import NotFound from "./pages/NotFound";
-import ScanTestPage from "./pages/ScanTestPage"; // ★追加: ScanTestPageをインポート
+import ScanTestPage from "./pages/ScanTestPage"; 
+import MenuPage from "./pages/MenuPage"; 
+import InspectionPage from "./pages/InspectionPage";
 
 // AppStateProvider は contextフォルダから、useAppState は hooksフォルダからインポート
 import { AppStateProvider } from './context/AppStateContext';
@@ -31,11 +33,17 @@ const App = () => {
               {/* ログイン画面 */}
               <Route path="/" element={<LoginRoute />} />
 
+              {/* メニュー画面 - ログイン済みの場合のみアクセス可能 */}
+              <Route path="/menu" element={<MenuRoute />} /> 
+
               {/* 計画選択画面 - ログイン済みの場合のみアクセス可能 */}
               <Route path="/plan-selection" element={<PlanSelectionRoute />} />
 
               {/* ピッキング画面 - 計画が選択済みの場合のみアクセス可能 */}
               <Route path="/picking" element={<PickingRoute />} />
+
+              {/* 検査画面 - ログイン済みの場合のみアクセス可能 */}
+              <Route path="/inspection" element={<InspectionRoute />} />
 
               {/* 読み取りテスト画面 - ログイン状態に関わらずアクセス可能とする */}
               <Route path="/scan-test" element={<ScanTestPage />} /> {/* ★追加: 読み取りテスト画面のルート */}
@@ -55,9 +63,20 @@ const LoginRoute = () => {
   const { currentUser } = useAppState();
   // 既にログインしている場合は計画選択画面へリダイレクト
   if (currentUser) {
-    return <Navigate to="/plan-selection" replace />;
+    return <Navigate to="/menu" replace />;
+    // return <Navigate to="/plan-selection" replace />;
   }
   return <LoginPage />;
+};
+
+// メニュー画面へのルーティングを制御するコンポーネント
+const MenuRoute = () => {
+  const { currentUser } = useAppState();
+  // ログインしていない場合はログイン画面へリダイレクト
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+  return <MenuPage />;
 };
 
 // 計画選択画面へのルーティングを制御するコンポーネント
@@ -75,9 +94,19 @@ const PickingRoute = () => {
   const { currentUser, selectedPlan } = useAppState();
   // ログインしていない、または計画が選択されていない場合は計画選択画面へリダイレクト
   if (!currentUser || !selectedPlan) {
-    return <Navigate to="/plan-selection" replace />;
+    return <Navigate to="/menu" replace />;
+    // return <Navigate to="/plan-selection" replace />;
   }
   return <PickingPage />;
+};
+
+// 検査画面へのルーティングを制御するコンポーネントを定義
+const InspectionRoute = () => {
+  const { currentUser } = useAppState();
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+  return <InspectionPage />;
 };
 
 export default App;
